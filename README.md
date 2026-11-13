@@ -46,3 +46,6 @@ Column names are matched case-insensitively after trimming whitespace. Extra col
 ## Next milestone
 
 Add data normalization and relationship checks across the three files, then calculate core metrics such as revenue, order count, average order value, and product/category performance before building charts and report exports.
+
+# ChatGPT Conversation
+https://chatgpt.com/share/6af72e5b-aef0-83e9-9758-ffa355e7e78c
