@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Upload product, customer, and order CSV files to prepare business data for reporting.">
+  <meta name="description" content="Upload and preview CSV datasets for business reporting.">
   <title>Business Data Reporter</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
@@ -12,79 +12,47 @@
     <header class="page-header">
       <p class="eyebrow">BUSINESS INTELLIGENCE WORKSPACE</p>
       <h1>Business Data Reporter</h1>
-      <p class="intro">Start by uploading your product catalog, customer list, and order history. Files are processed locally in your browser.</p>
+      <p class="intro">Upload one or more CSV files containing the data you want to explore. Files are processed locally in your browser, and you are not limited to a particular dataset or column structure.</p>
     </header>
 
     <section class="panel" aria-labelledby="upload-heading">
       <div class="section-heading">
         <div>
           <p class="eyebrow">STEP 1</p>
-          <h2 id="upload-heading">Upload your CSV files</h2>
+          <h2 id="upload-heading">Upload your data</h2>
         </div>
-        <span class="privacy-note"> <span class="status-dot"></span> Local processing</span>
+        <span class="privacy-note"><span class="status-dot"></span> Local processing</span>
       </div>
 
-      <div class="upload-grid">
-        <article class="upload-card">
-          <div class="file-icon" aria-hidden="true">P</div>
-          <h3>Products</h3>
-          <p>Product catalog, pricing, and categories.</p>
-          <label class="file-picker" for="products-file">Choose CSV</label>
-          <input id="products-file" type="file" accept=".csv,text/csv" data-dataset="products">
-          <p class="file-name" id="products-file-name">No file selected</p>
-          <p class="file-status" id="products-status" aria-live="polite">Waiting for file</p>
-        </article>
-
-        <article class="upload-card">
-          <div class="file-icon" aria-hidden="true">C</div>
-          <h3>Customers</h3>
-          <p>Customer details and location information.</p>
-          <label class="file-picker" for="customers-file">Choose CSV</label>
-          <input id="customers-file" type="file" accept=".csv,text/csv" data-dataset="customers">
-          <p class="file-name" id="customers-file-name">No file selected</p>
-          <p class="file-status" id="customers-status" aria-live="polite">Waiting for file</p>
-        </article>
-
-        <article class="upload-card">
-          <div class="file-icon" aria-hidden="true">O</div>
-          <h3>Orders</h3>
-          <p>Order dates, quantities, and customer/product IDs.</p>
-          <label class="file-picker" for="orders-file">Choose CSV</label>
-          <input id="orders-file" type="file" accept=".csv,text/csv" data-dataset="orders">
-          <p class="file-name" id="orders-file-name">No file selected</p>
-          <p class="file-status" id="orders-status" aria-live="polite">Waiting for file</p>
-        </article>
-      </div>
-
-      <div class="requirements">
-        <h3>Expected column names</h3>
-        <p><strong>Products:</strong> product_id, product_name, category, price</p>
-        <p><strong>Customers:</strong> customer_id, customer_name, location</p>
-        <p><strong>Orders:</strong> order_id, customer_id, product_id, quantity, order_date</p>
-        <p class="muted">Column names are checked without regard to capitalization or surrounding spaces. Extra columns are allowed.</p>
+      <div class="upload-area">
+        <div class="upload-symbol" aria-hidden="true">↥</div>
+        <h3>Select your CSV files</h3>
+        <p>Choose one file or select multiple files at once. Each file will be treated as a separate dataset.</p>
+        <input id="csv-files" type="file" accept=".csv,text/csv" multiple>
+        <label class="file-picker primary-picker" for="csv-files">Choose CSV files</label>
+        <p class="muted upload-hint">CSV format · Up to 10 MB per file</p>
       </div>
 
       <div class="actions">
-        <button id="process-button" type="button" disabled>Process uploaded files</button>
-        <button id="reset-button" class="button-secondary" type="button">Clear files</button>
+        <button id="reset-button" class="button-secondary" type="button" disabled>Clear files</button>
       </div>
-      <p id="overall-status" class="overall-status" role="status" aria-live="polite">Upload all three files to begin.</p>
+      <p id="overall-status" class="overall-status" role="status" aria-live="polite">No files selected yet.</p>
     </section>
 
     <section class="panel results-panel" aria-labelledby="results-heading">
       <div class="section-heading">
         <div>
           <p class="eyebrow">STEP 2</p>
-          <h2 id="results-heading">Processing results</h2>
+          <h2 id="results-heading">Uploaded datasets</h2>
         </div>
       </div>
       <div id="results" class="results-empty">
-        Your file summaries and data previews will appear here after processing.
+        Your file summaries and data previews will appear here after you choose files.
       </div>
     </section>
 
     <footer>
-      <p>Starter foundation · CSV files stay in this browser session and are not uploaded to a server.</p>
+      <p>CSV files stay in this browser session and are not uploaded to a server.</p>
     </footer>
   </main>
 
