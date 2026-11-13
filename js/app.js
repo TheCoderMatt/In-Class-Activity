@@ -1,64 +1,16 @@
 import { loadCsvFile } from "./csvLoader.js";
 import { validateDataset } from "./dataValidator.js";
 
-const datasetNames = ["products", "customers", "orders"];
-const uploadedData = Object.fromEntries(datasetNames.map((name) => [name, null]));
-
-const processButton = document.querySelector("#process-button");
+const fileInput = document.querySelector("#csv-files");
 const resetButton = document.querySelector("#reset-button");
 const overallStatus = document.querySelector("#overall-status");
 const resultsContainer = document.querySelector("#results");
 
+let uploadedDatasets = [];
+
 function setOverallStatus(message, type = "") {
   overallStatus.textContent = message;
   overallStatus.className = `overall-status ${type}`.trim();
-}
-
-function updateProcessButton() {
-  processButton.disabled = !datasetNames.every((name) => uploadedData[name]?.validation?.valid);
-}
-
-function updateFileStatus(datasetName, message, type = "") {
-  const status = document.querySelector(`#${datasetName}-status`);
-  status.textContent = message;
-  status.className = `file-status ${type}`.trim();
-}
-
-async function handleFileSelection(event) {
-  const input = event.currentTarget;
-  const datasetName = input.dataset.dataset;
-  const file = input.files?.[0];
-
-  uploadedData[datasetName] = null;
-  document.querySelector(`#${datasetName}-file-name`).textContent = file?.name ?? "No file selected";
-  resultsContainer.className = "results-empty";
-  resultsContainer.textContent = "Select all three valid files, then process them to see previews.";
-  updateProcessButton();
-
-  if (!file) {
-    updateFileStatus(datasetName, "Waiting for file");
-    return;
-  }
-
-  updateFileStatus(datasetName, "Reading and checking file…");
-  try {
-    const parsed = await loadCsvFile(file);
-    const validation = validateDataset(datasetName, parsed);
-    if (!validation.valid) {
-      updateFileStatus(datasetName, validation.errors.join(" "), "error");
-      setOverallStatus(`The ${datasetName} file needs attention.`, "error");
-      return;
-    }
-
-    uploadedData[datasetName] = { ...parsed, validation };
-    const warningText = validation.warnings.length ? ` · ${validation.warnings.length} warning(s)` : "";
-    updateFileStatus(datasetName, `Valid · ${validation.rowCount} rows${warningText}`, "success");
-    setOverallStatus(`${datasetName[0].toUpperCase() + datasetName.slice(1)} file validated.`);
-  } catch (error) {
-    updateFileStatus(datasetName, error.message, "error");
-    setOverallStatus(error.message, "error");
-  }
-  updateProcessButton();
 }
 
 function escapeHtml(value) {
@@ -67,62 +19,98 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function renderPreview(datasetName, data) {
-  const previewRows = data.rows.slice(0, 5);
-  const headers = data.headers;
+function renderDataset(dataset) {
+  const { fileName, headers, rows, validation } = dataset;
+  const previewRows = rows.slice(0, 5);
   const headerHtml = headers.map((header) => `<th scope="col">${escapeHtml(header)}</th>`).join("");
   const bodyHtml = previewRows.map((row) =>
     `<tr>${headers.map((header) => `<td>${escapeHtml(row[header])}</td>`).join("")}</tr>`
   ).join("");
 
   return `
-    <div class="preview-block">
-      <h3>${datasetName[0].toUpperCase() + datasetName.slice(1)} · ${data.rows.length.toLocaleString()} rows</h3>
+    <article class="dataset-card">
+      <div class="dataset-heading">
+        <div>
+          <h3>${escapeHtml(fileName)}</h3>
+          <p class="dataset-meta">${rows.length.toLocaleString()} rows · ${headers.length.toLocaleString()} columns</p>
+        </div>
+        <span class="dataset-badge">CSV parsed</span>
+      </div>
+      <p class="column-list"><strong>Columns:</strong> ${headers.map(escapeHtml).join(", ")}</p>
       <div class="table-wrap">
         <table>
           <thead><tr>${headerHtml}</tr></thead>
           <tbody>${bodyHtml}</tbody>
         </table>
       </div>
-      ${data.rows.length > 5 ? '<p class="muted">Showing the first 5 rows.</p>' : ""}
-      ${data.validation.warnings.map((warning) => `<p class="file-status error">${escapeHtml(warning)}</p>`).join("")}
-    </div>`;
+      ${rows.length > 5 ? '<p class="muted preview-note">Showing the first 5 rows.</p>' : ""}
+      ${validation.warnings.map((warning) => `<p class="file-status">${escapeHtml(warning)}</p>`).join("")}
+    </article>`;
 }
 
-function processUploadedFiles() {
-  const totalRows = datasetNames.reduce((sum, name) => sum + uploadedData[name].rows.length, 0);
-  const summary = datasetNames.map((name) => `
-    <div class="summary-card">
-      <span>${name[0].toUpperCase() + name.slice(1)} rows</span>
-      <strong>${uploadedData[name].rows.length.toLocaleString()}</strong>
-    </div>`).join("");
+function renderResults() {
+  if (!uploadedDatasets.length) {
+    resultsContainer.className = "results-empty";
+    resultsContainer.textContent = "Your file summaries and data previews will appear here after you choose files.";
+    return;
+  }
 
+  const totalRows = uploadedDatasets.reduce((sum, dataset) => sum + dataset.rows.length, 0);
+  const totalColumns = uploadedDatasets.reduce((sum, dataset) => sum + dataset.headers.length, 0);
   resultsContainer.className = "";
   resultsContainer.innerHTML = `
     <div class="result-summary">
-      ${summary}
-      <div class="summary-card"><span>Total rows loaded</span><strong>${totalRows.toLocaleString()}</strong></div>
+      <div class="summary-card"><span>Files loaded</span><strong>${uploadedDatasets.length.toLocaleString()}</strong></div>
+      <div class="summary-card"><span>Total rows</span><strong>${totalRows.toLocaleString()}</strong></div>
+      <div class="summary-card"><span>Total columns</span><strong>${totalColumns.toLocaleString()}</strong></div>
     </div>
-    ${datasetNames.map((name) => renderPreview(name, uploadedData[name])).join("")}
+    <div class="dataset-list">${uploadedDatasets.map(renderDataset).join("")}</div>
   `;
-  setOverallStatus("All three CSV files were parsed and passed the required-column checks.", "success");
+}
+
+async function handleFileSelection(event) {
+  const selectedFiles = Array.from(event.currentTarget.files ?? []);
+  if (!selectedFiles.length) return;
+
+  uploadedDatasets = [];
+  renderResults();
+  resetButton.disabled = false;
+  setOverallStatus(`Reading ${selectedFiles.length} selected file(s)…`);
+
+  const failures = [];
+  for (const file of selectedFiles) {
+    try {
+      const parsed = await loadCsvFile(file);
+      const validation = validateDataset(parsed);
+      if (!validation.valid) {
+        failures.push(`${file.name}: ${validation.errors.join(" ")}`);
+        continue;
+      }
+      uploadedDatasets.push({ ...parsed, validation });
+    } catch (error) {
+      failures.push(`${file.name}: ${error.message}`);
+    }
+  }
+
+  renderResults();
+  const loadedCount = uploadedDatasets.length;
+  if (failures.length) {
+    setOverallStatus(
+      `Loaded ${loadedCount} of ${selectedFiles.length} file(s). ${failures.join(" ")}`,
+      loadedCount ? "" : "error"
+    );
+  } else {
+    setOverallStatus(`Successfully loaded and previewed ${loadedCount} CSV file(s).`, "success");
+  }
 }
 
 function resetApplication() {
-  datasetNames.forEach((name) => {
-    uploadedData[name] = null;
-    document.querySelector(`#${name}-file`).value = "";
-    document.querySelector(`#${name}-file-name`).textContent = "No file selected";
-    updateFileStatus(name, "Waiting for file");
-  });
-  resultsContainer.className = "results-empty";
-  resultsContainer.textContent = "Your file summaries and data previews will appear here after processing.";
-  setOverallStatus("Upload all three files to begin.");
-  updateProcessButton();
+  uploadedDatasets = [];
+  fileInput.value = "";
+  resetButton.disabled = true;
+  renderResults();
+  setOverallStatus("No files selected yet.");
 }
 
-datasetNames.forEach((name) => {
-  document.querySelector(`#${name}-file`).addEventListener("change", handleFileSelection);
-});
-processButton.addEventListener("click", processUploadedFiles);
+fileInput.addEventListener("change", handleFileSelection);
 resetButton.addEventListener("click", resetApplication);
