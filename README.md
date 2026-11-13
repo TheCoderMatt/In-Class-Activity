@@ -1,6 +1,6 @@
 # Business Data Reporter
 
-A browser-based starter application for loading product, customer, and order CSV files. The first milestone focuses on the upload interface, CSV parsing, basic schema validation, and data previews.
+A browser-based starter application for uploading and inspecting CSV datasets. It is intentionally dataset-agnostic: users can upload files from different business domains without having to rename their files or conform to a predefined set of column names.
 
 ## Run locally
 
@@ -16,36 +16,40 @@ Then open [http://localhost:8000](http://localhost:8000).
 
 Papa Parse is imported from jsDelivr as an ES module. An internet connection is required to load that dependency.
 
-## Expected CSV columns
+## Uploading files
 
-| File | Required columns |
-| --- | --- |
-| Products | `product_id`, `product_name`, `category`, `price` |
-| Customers | `customer_id`, `customer_name`, `location` |
-| Orders | `order_id`, `customer_id`, `product_id`, `quantity`, `order_date` |
+- Use the single **Choose CSV files** control to select one or multiple CSV files.
+- Each selected file is treated as an independent dataset and parsed automatically.
+- The application displays each file's name, row count, column count, column names, and a preview of up to five rows.
+- No particular filenames, dataset categories, or business column names are required.
 
-Column names are matched case-insensitively after trimming whitespace. Extra columns are allowed. Rows with blank required values are retained and flagged as warnings.
+## Validation rules
+
+The generic validator checks only whether a file:
+- Is a non-empty CSV text file no larger than 10 MB.
+- Contains at least one named column header.
+- Has unique column names (case-insensitive comparison).
+- Contains at least one data row.
+
+It does not require fields such as `product_id`, `customer_id`, `order_date`, or any other business-specific column. The uploaded data is not transformed into a particular business model at this stage.
 
 ## Project structure
 
-- `index.html` — upload interface and results area.
+- `index.html` — generic multi-file upload interface and results area.
 - `css/styles.css` — responsive layout and visual styling.
-- `js/app.js` — connects the interface, file selection, validation, and previews.
+- `js/app.js` — handles file selection, parsing workflow, summaries, and previews.
 - `js/csvLoader.js` — reads CSV files in the browser and parses them with Papa Parse.
-- `js/dataValidator.js` — checks required columns and flags incomplete rows.
+- `js/dataValidator.js` — performs schema-agnostic structural checks.
 
-## Current behavior and assumptions
+## Current assumptions and limitations
 
-- Three separate CSV files are required: products, customers, and orders.
-- Each file must be a non-empty `.csv` text file and no larger than 10 MB.
+- CSV is the supported input format; Excel workbooks and other file types are not supported yet.
+- Each file is limited to 10 MB in this starter version.
 - Data is processed in the browser; there is no backend, database, login, or server-side upload.
-- This milestone checks the file structure and required columns. It does not yet join records, validate ID relationships, calculate revenue, or generate management reports.
-- The app expects the column names above. A future column-mapping step can support different source-system naming conventions.
 - Files are held in page memory only and are cleared when the user resets the interface or closes/reloads the page.
+- CSV files are treated as separate datasets. The app does not yet infer relationships, identify metrics, join datasets, or generate reports.
+- The browser needs an internet connection to load Papa Parse from the CDN.
 
 ## Next milestone
 
-Add data normalization and relationship checks across the three files, then calculate core metrics such as revenue, order count, average order value, and product/category performance before building charts and report exports.
-
-# ChatGPT Conversation
-https://chatgpt.com/share/6af72e5b-aef0-83e9-9758-ffa355e7e78c
+Introduce a dataset-inspection and configuration step that helps users describe what each uploaded file represents and identify relationships between files. Analytics should be based on the actual uploaded data and user-confirmed field mappings rather than assumptions about fixed dataset types or column names.
